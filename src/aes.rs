@@ -133,6 +133,24 @@ pub fn aes128_ecb_decrypt_block(block: &[u8; 16], key: &[u8; 16]) -> [u8; 16] {
     st
 }
 
+/// AES-128 CBC encrypt (SP 800-38A: pad first if needed upstream —
+/// this function requires non-empty, 16-aligned input).
+pub fn cbc_encrypt(pt: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> Vec<u8> {
+    assert!(pt.len() % 16 == 0 && !pt.is_empty(), "CBC input must be non-empty 16-byte aligned");
+    let mut out = Vec::with_capacity(pt.len());
+    let mut prev = *iv;
+    for block in pt.chunks_exact(16) {
+        let mut b = [0u8; 16];
+        for k in 0..16 {
+            b[k] = block[k] ^ prev[k];
+        }
+        let enc = aes128_ecb_encrypt_block(&b, key);
+        out.extend_from_slice(&enc);
+        prev = enc;
+    }
+    out
+}
+
 /// AES-128 CBC decrypt (SP 800-38A style: each block ECB-decrypted then
 /// XORed with the previous ciphertext block; the IV seeds the chain).
 pub fn cbc_decrypt(ct: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> Vec<u8> {

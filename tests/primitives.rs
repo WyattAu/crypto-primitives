@@ -134,3 +134,31 @@ fn xor_combines() {
     let once = xor::xor(m, &kt);
     assert_eq!(xor::xor(&once, &kt), m.to_vec());
 }
+
+#[test]
+fn aes128_cbc_encrypt_nist_f21_and_roundtrip() {
+    // NIST SP 800-38A F.2.1 CBC-AES128.Encrypt, block 1: the same
+    // key/iv/pt whose ciphertext appears in the F.2.5 decrypt test above
+    let key: [u8; 16] = [
+        0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+    ];
+    let iv: [u8; 16] = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    ];
+    let pt_block: [u8; 16] = [
+        0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
+    ];
+    let ct = aes::cbc_encrypt(&pt_block, &key, &iv);
+    assert_eq!(
+        ct,
+        vec![
+            0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d,
+        ]
+    );
+    // full roundtrip: encrypt(pad(x)) then decrypt must return pad(x)
+    let msg: Vec<u8> = (0..37u8).map(|i| i * 7 % 251).collect();
+    let padded = padding::pkcs7_pad(&msg, 16);
+    let full_ct = aes::cbc_encrypt(&padded, &key, &iv);
+    let back = aes::cbc_decrypt(&full_ct, &key, &iv);
+    assert_eq!(back, padded);
+}
