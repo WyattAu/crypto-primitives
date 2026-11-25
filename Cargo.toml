@@ -1,0 +1,8 @@
+[package]
+name = "crypto-primitives"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust cryptographic primitives, std only: AES-128 (ECB/CBC), SHA-1 (state-exposed), PKCS#7, hex, base64, XOR"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
